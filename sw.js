@@ -6,21 +6,37 @@ const CACHE_NAME = 'lab-8-starter';
 // Installs the service worker. Feed it some initial URLs to cache
 self.addEventListener('install', function (event) {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(function (cache) {
+    caches.open(CACHE_NAME).then(async cache => {
       // B6. TODO - Add all of the URLs from RECIPE_URLs here so that they are
       //            added to the cache when the ServiceWorker is installed
-      return cache.addAll([
-        '/Lab8_Starter/',
-        '/Lab8_Starter/index.html',
-        '/Lab8_Starter/assets/scripts/main.js',
-        '/Lab8_Starter/assets/styles/main.css',
-        '/Lab8_Starter/assets/components/RecipeCard.js',
-        '/Lab8_Starter/assets/images/5-star.svg',
-        '/Lab8_Starter/assets/images/4-star.svg',
-        '/Lab8_Starter/assets/images/cornbread-stuffing.jpg',
-        '/Lab8_Starter/assets/images/thanksgiving-side-dishes.jpg'
-      ]);
+      const filesToCache = [     
+        'index.html',
+        'assets/scripts/main.js',
+        'assets/styles/main.css',
+        'assets/components/RecipeCard.js',
+        'assets/images/5-star.svg',
+        'assets/images/4-star.svg',
+        'assets/images/cornbread-stuffing.jpg',
+        'assets/images/thanksgiving-side-dishes.jpg',
+        'https://adarsh249.github.io/Lab8-Starter/recipes/1_50-thanksgiving-side-dishes.json',
+        'https://adarsh249.github.io/Lab8-Starter/recipes/2_roasting-turkey-breast-with-stuffing.json',
+        'https://adarsh249.github.io/Lab8-Starter/recipes/3_moms-cornbread-stuffing.json',
+        'https://adarsh249.github.io/Lab8-Starter/recipes/4_50-indulgent-thanksgiving-side-dishes-for-any-holiday-gathering.json',
+        'https://adarsh249.github.io/Lab8-Starter/recipes/5_healthy-thanksgiving-recipe-crockpot-turkey-breast.json',
+        'https://adarsh249.github.io/Lab8-Starter/recipes/6_one-pot-thanksgiving-dinner.json'
+      ];
+      
+      for (const url of filesToCache) {
+        try {
+          await cache.add(url);
+        } catch (err) {
+          console.error('❌ B6 cache.add 失敗 →', url, err);
+        }
+      }// B6
     })
+      /* 一次性加入 Cache ‧ 若有 404 / CORS 會整包失敗 ------------ */
+      //return cache.addAll(filesToCache); 
+
   );
 });
 
@@ -48,21 +64,17 @@ self.addEventListener('fetch', function (event) {
   // B8. TODO - If the request is in the cache, return with the cached version.
   //            Otherwise fetch the resource, add it to the cache, and return
   //            network response.
-  event.respondWith(
-    caches.match(event.request).then(function (cachedResponse) {
-      if (cachedResponse) {
-        // B8 - 如果請求的資源在 cache 裡，就直接回傳
-        return cachedResponse;
-      }
-  
-      // B8 - 否則就去 fetch 資源
-      return fetch(event.request).then(function (networkResponse) {
-        return caches.open(CACHE_NAME).then(function (cache) {
-          // 把抓回來的東西 clone 一份放進 cache
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse; // 再回傳給頁面使用
-        });
-      });
-    })
+  event.respondWith(                                                // B7
+    caches.match(event.request).then(cached => {                    // B7
+      if (cached) {                                                 // B8
+        return cached;                                              // B8  →  回傳快取
+      }                                                             // B8
+      return fetch(event.request).then(res => {                     // B8
+        return caches.open(CACHE_NAME).then(cache => {              // B8
+          cache.put(event.request, res.clone());                    // B8  →  動態快取
+          return res;                                               // B8  →  回傳網路資源
+        });                                                         // B8
+      });                                                           // B8
+    })                                                              // B7
   );
 });
