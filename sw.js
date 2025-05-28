@@ -9,7 +9,17 @@ self.addEventListener('install', function (event) {
     caches.open(CACHE_NAME).then(function (cache) {
       // B6. TODO - Add all of the URLs from RECIPE_URLs here so that they are
       //            added to the cache when the ServiceWorker is installed
-      return cache.addAll([]);
+      return cache.addAll([
+        '/Lab8_Starter/',
+        '/Lab8_Starter/index.html',
+        '/Lab8_Starter/assets/scripts/main.js',
+        '/Lab8_Starter/assets/styles/main.css',
+        '/Lab8_Starter/assets/components/RecipeCard.js',
+        '/Lab8_Starter/assets/images/5-star.svg',
+        '/Lab8_Starter/assets/images/4-star.svg',
+        '/Lab8_Starter/assets/images/cornbread-stuffing.jpg',
+        '/Lab8_Starter/assets/images/thanksgiving-side-dishes.jpg'
+      ]);
     })
   );
 });
@@ -34,7 +44,25 @@ self.addEventListener('fetch', function (event) {
   /*******************************/
   // B7. TODO - Respond to the event by opening the cache using the name we gave
   //            above (CACHE_NAME)
+
   // B8. TODO - If the request is in the cache, return with the cached version.
   //            Otherwise fetch the resource, add it to the cache, and return
   //            network response.
+  event.respondWith(
+    caches.match(event.request).then(function (cachedResponse) {
+      if (cachedResponse) {
+        // B8 - 如果請求的資源在 cache 裡，就直接回傳
+        return cachedResponse;
+      }
+  
+      // B8 - 否則就去 fetch 資源
+      return fetch(event.request).then(function (networkResponse) {
+        return caches.open(CACHE_NAME).then(function (cache) {
+          // 把抓回來的東西 clone 一份放進 cache
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse; // 再回傳給頁面使用
+        });
+      });
+    })
+  );
 });
